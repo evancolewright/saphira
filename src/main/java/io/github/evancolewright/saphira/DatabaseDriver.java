@@ -2,6 +2,9 @@ package io.github.evancolewright.saphira;
 
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * Represents a specific database driver class.
+ */
 public enum DatabaseDriver
 {
     MYSQL("com.mysql.cj.jdbc.Driver", "jdbc:mysql"),

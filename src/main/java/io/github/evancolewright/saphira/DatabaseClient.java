@@ -50,18 +50,23 @@ public class DatabaseClient
             Class.forName(databaseType.getDriverClassName());
         } catch (ClassNotFoundException exception)
         {
+            // If it is MySQL, they may be using an older driver...
             if (databaseType == DatabaseDriver.MYSQL)
             {
                 try
                 {
+                    // Try to get the old driver
                     Class.forName("com.mysql.jdbc.Driver");
+                    // We also seem to have to set it here
                     hikariConfig.setDataSourceClassName("com.mysql.jdbc.Driver");
                 } catch (ClassNotFoundException exception1)
                 {
                     throw new DatabaseClientInitializationException("Failed to find any suitable driver class for MySQL!", exception);
+                    // SOL
                 }
             }
             throw new DatabaseClientInitializationException(String.format("Failed to find driver class: %s", databaseType.getDriverClassName()), exception);
+            // SOL
         }
 
         this.hikariDataSource = new HikariDataSource(hikariConfig);
