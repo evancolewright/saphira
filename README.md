@@ -108,7 +108,7 @@ mysqlClient.executeBatchAsync("INSERT INTO PlayerData (uuid, coins) (?, ?);", (s
 
 All SQL Exceptions are wrapped with an **UncheckedSQLException** class. Unlike some SQL API's, you are not forced to catch a SQLException every 5 seconds, but it is  thrown if you did want to in certain situations.  You can choose to handle these situations by wrapping a call that may potentially throw it.
 
-```
+```java
 try
 {
 	// Some library call here
