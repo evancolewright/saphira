@@ -43,7 +43,7 @@ Instead of using the traditional ResultSet that throws all of those icky excepti
 
 ```java
 // Sync
-QueryResults resultSet = mysqlClient.query("SELECT * FROM PlayerData;");
+QueryResults resultSet = mysqlClient.query("SELECT * FROM PlayerData;", null);
 while (resultSet.next())
     // do something
 	
