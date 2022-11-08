@@ -45,12 +45,12 @@ Instead of using the traditional ResultSet that throws all of those icky excepti
 // Sync
 QueryResults resultSet = mysqlClient.query("SELECT * FROM PlayerData;");
 while (resultSet.next())
-	// do something
+    // do something
 	
 // Async
 databaseClient.queryAsync("SELECT * FROM Animals;", null).whenComplete(((queryResults, throwable) -> {
-		if (throwable == null)
-			// Do something with results...
+    if (throwable == null)
+        // Do something with results...
 }));
 ```
 
@@ -59,9 +59,9 @@ databaseClient.queryAsync("SELECT * FROM Animals;", null).whenComplete(((queryRe
 ```java
 // Sync
 int rowAltered = mysqlClient.update("INSERT INTO PlayerData (uuid, coins) VALUES (?, ?) ON DUPLICATE KEY UPDATE coins = coins + ?;", (statement) -> {
-	 preparedStatement.setString(1, String.valueOf(player.getUniqueId()));
-	 preparedStatement.setInt(2, 100);
-	 preparedStatement.setInt(3, 100);	
+    preparedStatement.setString(1, String.valueOf(player.getUniqueId()));
+    preparedStatement.setInt(2, 100);
+    preparedStatement.setInt(3, 100);	
 });
 
 //Async
@@ -71,8 +71,8 @@ databaseClient.updateAsync("INSERT INTO PlayerData (uuid, coins) VALUES (?, ?) O
     statement.setInt(3, 100);
 }
 ).whenComplete(((rowsAltered, throwable) -> {
-		if (throwable == null)
-			// do something
+    if (throwable == null)
+        // do something
 }));
 ```
 
@@ -82,25 +82,25 @@ databaseClient.updateAsync("INSERT INTO PlayerData (uuid, coins) VALUES (?, ?) O
 // Sync
 List<Player> players = ...;
 int[] batchRowsAltered = mysqlClient.executeBatch("INSERT INTO PlayerData (uuid, coins) (?, ?);", (statement) -> {
-	for (Player player : player)
-	{
-		statement.setString(1, player.getUniqueID());
-		statement.setInt(2, 100);
-		statement.addBatch();
-	}
+    for (Player player : player)
+    {
+	statement.setString(1, player.getUniqueID());
+	statement.setInt(2, 100);
+	statement.addBatch();
+    }
 });
 
 // Async
 mysqlClient.executeBatchAsync("INSERT INTO PlayerData (uuid, coins) (?, ?);", (statement) -> {
-	for (Player player : player)
-	{
-		statement.setString(1, player.getUniqueID());
-		statement.setInt(2, 100);
-		statement.addBatch();
-	}
+    for (Player player : player)
+    {
+	statement.setString(1, player.getUniqueID());
+	statement.setInt(2, 100);
+	statement.addBatch();
+    }
 }).whenComplete((array, throwable) -> { 
-	if (throwable == null)
-			// do something
+    if (throwable == null)
+        // do something
 }));
 ```
 
