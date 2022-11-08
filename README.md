@@ -24,7 +24,7 @@ mvn clean install
 ```
 
 ### Usage
-##### Creating an Instance
+#### Creating an Instance
 
 ```java
 // MySQL
@@ -37,7 +37,7 @@ SQLiteClient sqliteClient = new SQLiteClient(databaseFile);
 
 All examples will be using the MySQLClient, but they all will work with the SQLiteClient too.
 
-##### Querying the Database
+#### Querying the Database
 
 Instead of using the traditional ResultSet that throws all of those icky exceptions and has to be cleaned up after use (which also throws an  exception...like what?), I opted to create a wrapper, QueryResults, that you can use without having to worry about try/catch boilerplate.  It  has most of the same functions as a ResultSet too.
 
@@ -54,7 +54,7 @@ databaseClient.queryAsync("SELECT * FROM Animals;", null).whenComplete(((queryRe
 }));
 ```
 
-##### Updating the Database
+#### Updating the Database
 
 ```java
 // Sync
@@ -76,7 +76,7 @@ databaseClient.updateAsync("INSERT INTO PlayerData (uuid, coins) VALUES (?, ?) O
 }));
 ```
 
-##### Submitting Command Batches to the Database
+#### Submitting Command Batches to the Database
 
 ```java
 // Sync
