@@ -9,7 +9,7 @@ import java.sql.SQLException;
 
 /**
  * A wrapper around {@link ResultSet} that eliminates those
- * ridiculous checked {@link SQLException}s by wrapping them with an {@link UncheckedSQLException}.
+ * ridiculous checked {@link SQLException} by wrapping them with an {@link UncheckedSQLException}.
  */
 public class QueryResults
 {
@@ -63,7 +63,7 @@ public class QueryResults
     }
 
     /**
-     * @see ResultSet#getInt(int)
+     * @see ResultSet#getInt(String)
      */
     public int getInt(String columnLabel) throws UncheckedSQLException
     {

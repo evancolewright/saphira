@@ -78,7 +78,7 @@ public class DatabaseClient
      * @param sqlStatement The SQL statement to execute
      * @param psPreparer   The preparer that prepares the SQL statement
      * @return The number of rows altered
-     * @throws io.github.evancolewright.saphira.exception.UncheckedSQLException If a {@link SQLException} occurs
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
     public int update(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException
     {
@@ -94,7 +94,7 @@ public class DatabaseClient
 
     /**
      * Does the same thing as {@link DatabaseClient#update(String, SQLConsumer)} except
-     * does everything asynchronously and returns a {@link CompletableFuture<Integer>}.
+     * does everything asynchronously and returns a {@link CompletableFuture}.
      *
      * @see DatabaseClient#update(String, SQLConsumer)
      */
@@ -129,7 +129,7 @@ public class DatabaseClient
 
     /**
      * Does the same thing as {@link DatabaseClient#query(String)} except
-     * does everything asynchronously and returns a {@link CompletableFuture<QueryResults>}.
+     * does everything asynchronously and returns a {@link CompletableFuture}.
      *
      * @see DatabaseClient#query(String)
      */
@@ -167,7 +167,7 @@ public class DatabaseClient
     /**
      * Does the same thing as {@link DatabaseClient#executeBatch(String, SQLConsumer)} except
      * does everything asynchronously and converts the int[] returned from {@link PreparedStatement#executeBatch()}
-     * to a {@link List<Integer>} and returns as a {@link CompletableFuture<List<Integer>>}.
+     * to a {@link List<Integer>} and returns as a {@link CompletableFuture}.
      *
      * @see DatabaseClient#executeBatch(String, SQLConsumer)
      */
