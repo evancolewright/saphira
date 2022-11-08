@@ -111,10 +111,10 @@ All SQL Exceptions are wrapped with an **UncheckedSQLException** class. Unlike s
 ```java
 try
 {
-	// Some library call here
+    // Some library call here
 } catch (UncheckedSQLException exception)
 {
-	// SQLException was thrown, handle it
+    // SQLException was thrown, handle it
 }
 ```
 
