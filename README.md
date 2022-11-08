@@ -8,7 +8,7 @@ A lightweight JDBC abstraction wrapped around HikariCP.
 ### Installing
 1. Clone the repository from GitHub.
 ```
-git clone https://github.com/evancolewright/sql-helper.git
+git clone https://github.com/evancolewright/saphira.git
 ```
 2. Install to your local .m2 (Maven).
 ```
@@ -18,7 +18,7 @@ mvn clean install
 ```
 <dependency>
     <groupId>io.github.evancolewright</groupId>
-    <artifactId>sql-helper</artifactId>
+    <artifactId>saphira</artifactId>
     <version>VERSION</version>
 </dependency>
 ```
