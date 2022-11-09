@@ -69,8 +69,7 @@ databaseClient.updateAsync("INSERT INTO PlayerData (uuid, coins) VALUES (?, ?) O
     statement.setString(1, String.valueOf("");
     statement.setInt(2, 100);
     statement.setInt(3, 100);
-}
-).whenComplete(((rowsAltered, throwable) -> {
+}).whenComplete(((rowsAltered, throwable) -> {
     if (throwable == null)
         // do something
 }));
