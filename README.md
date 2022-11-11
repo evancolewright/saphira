@@ -5,16 +5,16 @@ A lightweight JDBC abstraction wrapped around HikariCP.
 - MySQL
 - SQLite
 
-### Installing
+### Installing (Maven)
 1. Clone the repository from GitHub.
 ```
 git clone https://github.com/evancolewright/saphira.git
 ```
-2. Install to your local .m2 (Maven).
+2. Install to your local .m2.
 ```
 mvn clean install
 ```
-3. Add the following dependency to your project (Maven).
+3. Add the following dependency to your project.
 ```
 <dependency>
     <groupId>io.github.evancolewright</groupId>
