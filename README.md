@@ -48,7 +48,7 @@ while (resultSet.next())
     // do something
 	
 // Async
-databaseClient.queryAsync("SELECT * FROM Animals;", null).whenComplete(((queryResults, throwable) -> {
+databaseClient.queryAsync("SELECT * FROM PlayerData;", null).whenComplete(((queryResults, throwable) -> {
     if (throwable == null)
         // Do something with results...
 }));
