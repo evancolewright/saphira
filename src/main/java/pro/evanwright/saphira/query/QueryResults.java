@@ -1,6 +1,6 @@
-package io.github.evancolewright.saphira.query;
+package pro.evanwright.saphira.query;
 
-import io.github.evancolewright.saphira.exception.UncheckedSQLException;
+import pro.evanwright.saphira.exception.UncheckedSQLException;
 
 import java.math.BigDecimal;
 import java.sql.Date;

@@ -1,8 +1,10 @@
-package io.github.evancolewright.saphira.exception;
+package pro.evanwright.saphira.exception;
+
+import pro.evanwright.saphira.DatabaseClient;
 
 /**
  * An unchecked, wrapper {@link Exception} around all exceptions that can occur
- * when a {@link io.github.evancolewright.saphira.DatabaseClient} initializes.
+ * when a {@link DatabaseClient} initializes.
  */
 public class DatabaseClientInitializationException extends RuntimeException
 {

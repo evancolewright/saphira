@@ -1,10 +1,10 @@
-package io.github.evancolewright.saphira.client;
+package pro.evanwright.saphira.client;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import io.github.evancolewright.saphira.DatabaseClient;
-import io.github.evancolewright.saphira.DatabaseCredentials;
-import io.github.evancolewright.saphira.exception.DatabaseClientInitializationException;
+import pro.evanwright.saphira.DatabaseClient;
+import pro.evanwright.saphira.DatabaseCredentials;
+import pro.evanwright.saphira.exception.DatabaseClientInitializationException;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;

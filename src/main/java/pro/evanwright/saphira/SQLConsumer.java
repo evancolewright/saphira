@@ -1,4 +1,4 @@
-package io.github.evancolewright.saphira;
+package pro.evanwright.saphira;
 
 import org.jetbrains.annotations.NotNull;
 

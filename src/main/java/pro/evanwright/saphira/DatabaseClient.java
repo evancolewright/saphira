@@ -1,10 +1,7 @@
-package io.github.evancolewright.saphira;
+package pro.evanwright.saphira;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
-import io.github.evancolewright.saphira.exception.DatabaseClientInitializationException;
-import io.github.evancolewright.saphira.exception.UncheckedSQLException;
-import io.github.evancolewright.saphira.query.QueryResults;
+import pro.evanwright.saphira.exception.UncheckedSQLException;
+import pro.evanwright.saphira.query.QueryResults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

@@ -1,4 +1,4 @@
-package io.github.evancolewright.saphira.exception;
+package pro.evanwright.saphira.exception;
 
 /**
  * A wrapped, unchecked {@link java.sql.SQLException} in an attempt to make the code cleaner

@@ -1,11 +1,10 @@
-package io.github.evancolewright.saphira.client;
+package pro.evanwright.saphira.client;
 
-import io.github.evancolewright.saphira.DatabaseClient;
-import io.github.evancolewright.saphira.exception.DatabaseClientInitializationException;
-import io.github.evancolewright.saphira.exception.UncheckedSQLException;
+import pro.evanwright.saphira.DatabaseClient;
+import pro.evanwright.saphira.exception.DatabaseClientInitializationException;
+import pro.evanwright.saphira.exception.UncheckedSQLException;
 import org.jetbrains.annotations.NotNull;
 
-import javax.xml.crypto.Data;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
