@@ -5,16 +5,16 @@ A lightweight JDBC abstraction wrapped around HikariCP.
 - MySQL
 - SQLite
 
-### Installing
+### Installing (Maven)
 1. Clone the repository from GitHub.
 ```
 git clone https://github.com/evancolewright/saphira.git
 ```
-2. Install to your local .m2 (Maven).
+2. Install to your local .m2.
 ```
 mvn clean install
 ```
-3. Add the following dependency to your project (Maven).
+3. Add the following dependency to your project.
 ```
 <dependency>
     <groupId>io.github.evancolewright</groupId>
@@ -48,7 +48,7 @@ while (resultSet.next())
     // do something
 	
 // Async
-databaseClient.queryAsync("SELECT * FROM Animals;", null).whenComplete(((queryResults, throwable) -> {
+databaseClient.queryAsync("SELECT * FROM PlayerData;", null).whenComplete(((queryResults, throwable) -> {
     if (throwable == null)
         // Do something with results...
 }));
@@ -69,8 +69,7 @@ databaseClient.updateAsync("INSERT INTO PlayerData (uuid, coins) VALUES (?, ?) O
     statement.setString(1, String.valueOf("");
     statement.setInt(2, 100);
     statement.setInt(3, 100);
-}
-).whenComplete(((rowsAltered, throwable) -> {
+}).whenComplete(((rowsAltered, throwable) -> {
     if (throwable == null)
         // do something
 }));
