@@ -17,7 +17,7 @@ mvn clean install
 3. Add the following dependency to your project.
 ```
 <dependency>
-    <groupId>io.github.evancolewright</groupId>
+    <groupId>pro.evanwright</groupId>
     <artifactId>saphira</artifactId>
     <version>VERSION</version>
 </dependency>
