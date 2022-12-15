@@ -9,12 +9,15 @@ import pro.evanwright.saphira.query.QueryResults;
 public class QueryDatabaseTest
 {
     MySQLClient mySQLClient;
-    DatabaseCredentials databaseCredentials = new DatabaseCredentials("localhost", "Test", "root", "password");
 
     @Before
     public void setup()
     {
-        mySQLClient = new MySQLClient(databaseCredentials);
+        mySQLClient = new MySQLClient(new DatabaseCredentials(
+                System.getProperty("host", "127.0.0.1"), System.getProperty("database"),
+                System.getProperty("username"), System.getProperty("password"),
+                System.getProperty("port", "3306")
+        ));
         mySQLClient.update("CREATE TABLE Test (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100));", (ps) -> {});
     }
 

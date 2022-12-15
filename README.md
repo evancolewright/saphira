@@ -117,6 +117,11 @@ try
 }
 ```
 
+### Testing
+Run the following in your terminal replacing the credential arguments with your own credentials:
+```
+mvn test -Dhost=localhost -Dport="3306" -Ddatabase="Test" -Dusername=root -Dpassword=password
+```
 ### License
 
 MIT
