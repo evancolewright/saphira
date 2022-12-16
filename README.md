@@ -80,8 +80,7 @@ databaseClient.updateAsync(statement, (ps) -> {
 
 ## 🐛 Exceptions
 
-All SQL Exceptions are wrapped with an **UncheckedSQLException** class. Unlike some SQL API's, you are not forced to catch a SQLException every 5 seconds, but it is  thrown if you did want to in certain situations.  You can choose to handle these situations by wrapping a call that may potentially throw it.
-
+All SQL Exceptions are wrapped with an **UncheckedSQLException** class. This essentially means that you aren't forced to wrap every database call with a try/catch block, but you most certainly can.
 ```java
 try
 {
