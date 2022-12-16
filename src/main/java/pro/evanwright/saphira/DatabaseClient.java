@@ -11,12 +11,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 public abstract class DatabaseClient
 {
@@ -94,45 +91,6 @@ public abstract class DatabaseClient
     public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer)
     {
         return CompletableFuture.supplyAsync(() -> this.query(sqlStatement, psPreparer), this.threadPool);
-    }
-
-    /**
-     * Submits a batch of commands to the database.  You must include all
-     * {@link PreparedStatement#addBatch()} calls inside the preparer.
-     *
-     * @param sqlStatement The SQL statement to execute
-     * @return The results of the query
-     * @throws UncheckedSQLException If a {@link SQLException} occurs
-     */
-    public int[] executeBatch(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer)
-    {
-        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement))
-        {
-            connection.setAutoCommit(false);
-
-            psPreparer.accept(statement);
-
-            int[] count = statement.executeBatch();
-            connection.commit();
-
-            return count;
-        } catch (SQLException exception)
-        {
-            throw new UncheckedSQLException(exception);
-        }
-    }
-
-    /**
-     * Does the same thing as {@link DatabaseClient#executeBatch(String, SQLConsumer)} except
-     * does everything asynchronously and converts the int[] returned from {@link PreparedStatement#executeBatch()}
-     * to a {@link List<Integer>} and returns as a {@link CompletableFuture}.
-     *
-     * @see DatabaseClient#executeBatch(String, SQLConsumer)
-     */
-    public CompletableFuture<List<Integer>> executeBatchAsync(String sqlStatement, SQLConsumer<PreparedStatement> psPreparer)
-    {
-        return CompletableFuture.supplyAsync(() -> Arrays.stream(this.executeBatch(sqlStatement, psPreparer))
-                .boxed().collect(Collectors.toList()), this.threadPool);
     }
 
     public abstract void shutdown();
