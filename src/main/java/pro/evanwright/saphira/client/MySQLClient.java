@@ -10,13 +10,20 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class MySQLClient extends DatabaseClient
-{
+public class MySQLClient extends DatabaseClient {
+
+    private static final String NEW_MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver";
+    private static final String LEGACY_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
+
     private final HikariDataSource hikariDataSource;
-    public MySQLClient(@NotNull DatabaseCredentials databaseCredentials)
-    {
+
+    /**
+     * Creates a new MySQLClient instance.
+     * @param databaseCredentials  The credentials to authenticate to the database
+     */
+    public MySQLClient(@NotNull DatabaseCredentials databaseCredentials) {
         HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl("jdbc:mysql://" + databaseCredentials.host + ":" + databaseCredentials.port + "/" + databaseCredentials.database);
+        hikariConfig.setJdbcUrl(String.format("jdbc:mysql://%s:%s/%s", databaseCredentials.host, databaseCredentials.port, databaseCredentials.database));
         hikariConfig.setUsername(databaseCredentials.username);
         hikariConfig.setPassword(databaseCredentials.password);
 
@@ -25,50 +32,37 @@ public class MySQLClient extends DatabaseClient
         hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
         hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
 
-        try
-        {
-            // Try to use the new driver
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException exception)
-        {
-            try
-            {
-                // Fallback to the old driver
-                Class.forName("com.mysql.jdbc.Driver");
-            } catch (ClassNotFoundException exception1)
-            {
-                // You are SOL
+        try {
+            Class.forName(NEW_MYSQL_DRIVER);
+        } catch (ClassNotFoundException exception) {
+            try {
+                Class.forName(LEGACY_MYSQL_DRIVER);
+                hikariConfig.setDriverClassName(LEGACY_MYSQL_DRIVER);  // This is required for the legacy driver...
+            } catch (ClassNotFoundException exception1) {
                 throw new DatabaseClientInitializationException("Failed to load a suitable MySQL driver!", exception1);
             }
         }
 
-        try
-        {
-            this.hikariDataSource = new HikariDataSource(hikariConfig);
-        } catch (Exception exception)
-        {
-            throw new DatabaseClientInitializationException("Failed to start the HikariPool.  Are you sure that your credentials are correct?", exception);
-        }
+        this.hikariDataSource = new HikariDataSource(hikariConfig);
     }
 
     /**
      * Shuts down the internal {@link com.zaxxer.hikari.pool.HikariPool}.  You should
-     * always close this when you no longer need the instance.
+     * always call this when you no longer need the instance.
      */
     @Override
-    public void shutdown()
-    {
+    public void shutdown() {
         this.hikariDataSource.close();
     }
 
     /**
      * Gets a ready-to-use {@link Connection} from the internal {@link com.zaxxer.hikari.pool.HikariPool}.
-     * @return  A Hot-and-ready {@link Connection} instance
-     * @throws SQLException  If database access errors occur
+     *
+     * @return A ready-to-use {@link Connection} instance
+     * @throws SQLException If database access errors occur
      */
     @Override
-    public Connection getConnection() throws SQLException
-    {
+    public Connection getConnection() throws SQLException {
         return this.hikariDataSource.getConnection();
     }
 }

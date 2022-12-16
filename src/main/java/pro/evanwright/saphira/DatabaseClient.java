@@ -15,11 +15,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public abstract class DatabaseClient
-{
+public abstract class DatabaseClient {
     private final ExecutorService threadPool;
-    public DatabaseClient()
-    {
+
+    protected DatabaseClient() {
         this.threadPool = Executors.newCachedThreadPool();
     }
 
@@ -31,15 +30,12 @@ public abstract class DatabaseClient
      * @return The number of rows altered
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
-    public int update(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException
-    {
-        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement))
-        {
+    public int update(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
             if (psPreparer != null)
                 psPreparer.accept(statement);
             return statement.executeUpdate();
-        } catch (SQLException exception)
-        {
+        } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
         }
     }
@@ -50,8 +46,7 @@ public abstract class DatabaseClient
      *
      * @see DatabaseClient#update(String, SQLConsumer)
      */
-    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException
-    {
+    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
         return CompletableFuture.supplyAsync(() -> this.update(sqlStatement, psPreparer), this.threadPool);
     }
 
@@ -64,20 +59,16 @@ public abstract class DatabaseClient
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      * @see QueryResults
      */
-    public QueryResults query(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException
-    {
-        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement))
-        {
+    public QueryResults query(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
             if (psPreparer != null)
                 psPreparer.accept(statement);
-            try (ResultSet resultSet = statement.executeQuery())
-            {
+            try (ResultSet resultSet = statement.executeQuery()) {
                 CachedRowSet cachedRowSet = RowSetProvider.newFactory().createCachedRowSet();
                 cachedRowSet.populate(resultSet);
                 return new QueryResults(cachedRowSet);
             }
-        } catch (SQLException exception)
-        {
+        } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
         }
     }
@@ -88,8 +79,7 @@ public abstract class DatabaseClient
      *
      * @see DatabaseClient#query(String, SQLConsumer)
      */
-    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer)
-    {
+    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) {
         return CompletableFuture.supplyAsync(() -> this.query(sqlStatement, psPreparer), this.threadPool);
     }
 
