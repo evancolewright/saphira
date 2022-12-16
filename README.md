@@ -82,11 +82,9 @@ databaseClient.updateAsync(statement, (ps) -> {
 
 All SQL Exceptions are wrapped with an **UncheckedSQLException** class. This essentially means that you aren't forced to wrap every database call with a try/catch block, but you most certainly can.
 ```java
-try
-{
+try {
     // Some library call here
-} catch (UncheckedSQLException exception)
-{
+} catch (UncheckedSQLException exception) {
     // SQLException was thrown, handle it
 }
 ```
