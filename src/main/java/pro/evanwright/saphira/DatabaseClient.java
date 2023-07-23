@@ -27,6 +27,17 @@ public abstract class DatabaseClient {
      * Executes a SQL DML statement and returns the number of rows that were altered.
      *
      * @param sqlStatement The SQL statement to execute
+     * @return The number of rows altered
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
+     */
+    public int update(@NotNull String sqlStatement) throws UncheckedSQLException {
+        return update(sqlStatement, null);
+    }
+
+    /**
+     * Executes a SQL DML statement and returns the number of rows that were altered.
+     *
+     * @param sqlStatement The SQL statement to execute
      * @param psPreparer   The preparer that prepares the SQL statement
      * @return The number of rows altered
      * @throws UncheckedSQLException If a {@link SQLException} occurs
@@ -45,10 +56,32 @@ public abstract class DatabaseClient {
      * Does the same thing as {@link DatabaseClient#update(String, SQLConsumer)} except
      * does everything asynchronously and returns a {@link CompletableFuture}.
      *
+     * @see DatabaseClient#update(String)
+     */
+    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement) throws UncheckedSQLException {
+        return updateAsync(sqlStatement, null);
+    }
+
+    /**
+     * Does the same thing as {@link DatabaseClient#update(String, SQLConsumer)} except
+     * does everything asynchronously and returns a {@link CompletableFuture}.
+     *
      * @see DatabaseClient#update(String, SQLConsumer)
      */
-    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
         return CompletableFuture.supplyAsync(() -> this.update(sqlStatement, psPreparer), this.threadPool);
+    }
+
+    /**
+     * Queries the database for results and returns a {@link QueryResults} instance.
+     *
+     * @param sqlStatement The SQL statement to execute
+     * @return The results of the query
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
+     * @see QueryResults
+     */
+    public QueryResults query(@NotNull String sqlStatement) throws UncheckedSQLException {
+        return query(sqlStatement, null);
     }
 
     /**
@@ -72,6 +105,16 @@ public abstract class DatabaseClient {
         } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
         }
+    }
+
+    /**
+     * Does the same thing as {@link DatabaseClient#query(String)} except
+     * does everything asynchronously and returns a {@link CompletableFuture}.
+     *
+     * @see DatabaseClient#query(String)
+     */
+    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement) {
+        return queryAsync(sqlStatement, null);
     }
 
     /**
