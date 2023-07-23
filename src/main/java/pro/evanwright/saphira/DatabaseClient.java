@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class DatabaseClient {
+
     private final ExecutorService threadPool;
 
     protected DatabaseClient() {
