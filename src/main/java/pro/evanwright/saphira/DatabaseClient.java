@@ -53,6 +53,39 @@ public abstract class DatabaseClient {
     }
 
     /**
+     * Submits a batch of commands to the database. You must include all
+     * [PreparedStatement.addBatch] calls inside the preparer.
+     *
+     * @param sqlStatement The SQL statement to execute
+     * @return The results of the query
+     * @throws UncheckedSQLException If a [SQLException] occurs
+     */
+    public int executeBatch(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
+            connection.setAutoCommit(false);
+            if (psPreparer != null)
+                psPreparer.accept(statement);
+            int count = statement.executeBatch().length;
+            connection.commit();
+            return count;
+        } catch (SQLException exception) {
+            throw new UncheckedSQLException(exception);
+        }
+    }
+
+    /**
+     * Submits a batch of commands to the database. You must include all
+     * [PreparedStatement.addBatch] calls inside the preparer.
+     *
+     * @param sqlStatement The SQL statement to execute
+     * @return The results of the query
+     * @throws UncheckedSQLException If a [SQLException] occurs
+     */
+    public CompletableFuture<Integer> executeBatchAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+        return CompletableFuture.supplyAsync(() -> this.executeBatch(sqlStatement, psPreparer), this.threadPool);
+    }
+
+    /**
      * Does the same thing as {@link DatabaseClient#update(String, SQLConsumer)} except
      * does everything asynchronously and returns a {@link CompletableFuture}.
      *
