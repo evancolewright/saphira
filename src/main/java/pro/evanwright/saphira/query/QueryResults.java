@@ -239,6 +239,28 @@ public class QueryResults {
     }
 
     /**
+     * @see ResultSet#getLong(int)
+     */
+    public long getLong(int columnIndex) throws UncheckedSQLException {
+        try {
+            return this.resultSet.getLong(columnIndex);
+        } catch (SQLException exception) {
+            throw new UncheckedSQLException(exception);
+        }
+    }
+
+    /**
+     * @see ResultSet#getLong(String)
+     */
+    public long getLong(String columnLabel) throws UncheckedSQLException {
+        try {
+            return this.resultSet.getLong(columnLabel);
+        } catch (SQLException exception) {
+            throw new UncheckedSQLException(exception);
+        }
+    }
+
+    /**
      * @see java.sql.ResultSet#absolute(int)
      */
     public boolean absolute(int row) throws UncheckedSQLException {
@@ -390,5 +412,9 @@ public class QueryResults {
         } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
         }
+    }
+
+    public ResultSet getResultSet() {
+        return resultSet;
     }
 }

@@ -23,23 +23,49 @@ public class MySQLClient extends DatabaseClient {
      */
     public MySQLClient(@NotNull DatabaseCredentials databaseCredentials) {
         HikariConfig hikariConfig = new HikariConfig();
-        hikariConfig.setJdbcUrl(String.format("jdbc:mysql://%s:%s/%s", databaseCredentials.host, databaseCredentials.port, databaseCredentials.database));
+        boolean foundMaria = false;
+        try {
+            Class.forName("org.mariadb.jdbc.Driver");
+            hikariConfig.setJdbcUrl(String.format("jdbc:mariadb://%s:%s/%s", databaseCredentials.host, databaseCredentials.port, databaseCredentials.database));
+            foundMaria = true;
+        } catch (ClassNotFoundException e) {
+            hikariConfig.setJdbcUrl(String.format("jdbc:mysql://%s:%s/%s", databaseCredentials.host, databaseCredentials.port, databaseCredentials.database));
+        }
         hikariConfig.setUsername(databaseCredentials.username);
         hikariConfig.setPassword(databaseCredentials.password);
 
+        hikariConfig.setPoolName(databaseCredentials.poolName);
+
         hikariConfig.addDataSourceProperty("useUnicode", "true");
         hikariConfig.addDataSourceProperty("characterEncoding", "utf8");
-        hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
-        hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
 
-        try {
-            Class.forName(NEW_MYSQL_DRIVER);
-        } catch (ClassNotFoundException exception) {
+        if (databaseCredentials.optimizeHikari) {
+            hikariConfig.setMaxLifetime(30000);
+            hikariConfig.setIdleTimeout(10000);
+            hikariConfig.setMaximumPoolSize(20);
+            hikariConfig.setMinimumIdle(3);
+            hikariConfig.addDataSourceProperty("cachePrepStmts", true);
+            hikariConfig.addDataSourceProperty("prepStmtCacheSize", 250);
+            hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);
+            hikariConfig.addDataSourceProperty("useServerPrepStmts", true);
+            hikariConfig.addDataSourceProperty("cacheCallableStmts", true);
+            hikariConfig.addDataSourceProperty("cacheResultSetMetadata", true);
+            hikariConfig.addDataSourceProperty("cacheServerConfiguration", true);
+            hikariConfig.addDataSourceProperty("useLocalSessionState", true);
+            hikariConfig.addDataSourceProperty("elideSetAutoCommits", true);
+            hikariConfig.addDataSourceProperty("alwaysSendSetIsolation", false);
+        }
+
+        if (!foundMaria) {
             try {
-                Class.forName(LEGACY_MYSQL_DRIVER);
-                hikariConfig.setDriverClassName(LEGACY_MYSQL_DRIVER);  // This is required for the legacy driver...
-            } catch (ClassNotFoundException exception1) {
-                throw new DatabaseClientInitializationException("Failed to load a suitable MySQL driver!", exception1);
+                Class.forName(NEW_MYSQL_DRIVER);
+            } catch (ClassNotFoundException exception) {
+                try {
+                    Class.forName(LEGACY_MYSQL_DRIVER);
+                    hikariConfig.setDriverClassName(LEGACY_MYSQL_DRIVER);  // This is required for the legacy driver...
+                } catch (ClassNotFoundException exception1) {
+                    throw new DatabaseClientInitializationException("Failed to load a suitable MySQL driver!", exception1);
+                }
             }
         }
 
