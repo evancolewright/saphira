@@ -8,8 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * A wrapper around {@link ResultSet} that eliminates those
- * ridiculous checked {@link SQLException} by wrapping them with an {@link UncheckedSQLException}.
+ * A wrapper around {@link ResultSet} that transforms checked {@link SQLException} into {@link UncheckedSQLException}.
  */
 public class QueryResults {
     private final ResultSet resultSet;
