@@ -4,14 +4,15 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import pro.evanwright.saphira.DatabaseClient;
 import pro.evanwright.saphira.DatabaseCredentials;
-import pro.evanwright.saphira.exception.DatabaseClientInitializationException;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
+/**
+ * A {@link DatabaseClient} for accessing a MySQL or MariaDB database.
+  */
 public class MySQLClient extends DatabaseClient {
-
     private static final String NEW_MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver";
     private static final String LEGACY_MYSQL_DRIVER = "com.mysql.jdbc.Driver";
 
@@ -64,7 +65,7 @@ public class MySQLClient extends DatabaseClient {
                     Class.forName(LEGACY_MYSQL_DRIVER);
                     hikariConfig.setDriverClassName(LEGACY_MYSQL_DRIVER);  // This is required for the legacy driver...
                 } catch (ClassNotFoundException exception1) {
-                    throw new DatabaseClientInitializationException("Failed to load a suitable MySQL driver!", exception1);
+                    throw new RuntimeException("Failed to load any suitable database drivers!");
                 }
             }
         }
@@ -73,8 +74,8 @@ public class MySQLClient extends DatabaseClient {
     }
 
     /**
-     * Shuts down the internal {@link com.zaxxer.hikari.pool.HikariPool}.  You should
-     * always call this when you no longer need the instance.
+     * Shuts down the internal {@link com.zaxxer.hikari.pool.HikariPool}.
+     * This should be called when the instance is no longer needed.
      */
     @Override
     public void shutdown() {
