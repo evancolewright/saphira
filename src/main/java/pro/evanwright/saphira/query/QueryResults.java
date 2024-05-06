@@ -66,7 +66,7 @@ public class QueryResults {
      */
     public float getFloat(int columnIndex) throws UncheckedSQLException {
         try {
-            return this.resultSet.getInt(columnIndex);
+            return this.resultSet.getFloat(columnIndex);
         } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
         }
@@ -77,7 +77,7 @@ public class QueryResults {
      */
     public float getFloat(String columnLabel) throws UncheckedSQLException {
         try {
-            return this.resultSet.getInt(columnLabel);
+            return this.resultSet.getFloat(columnLabel);
         } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
         }
@@ -218,7 +218,7 @@ public class QueryResults {
     /**
      * @see ResultSet#getShort(int)
      */
-    public Object getShort(int columnIndex) throws UncheckedSQLException {
+    public short getShort(int columnIndex) throws UncheckedSQLException {
         try {
             return this.resultSet.getShort(columnIndex);
         } catch (SQLException exception) {
