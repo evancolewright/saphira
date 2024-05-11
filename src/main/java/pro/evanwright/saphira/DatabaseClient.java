@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -54,34 +55,47 @@ public abstract class DatabaseClient {
 
     /**
      * Submits a batch of commands to the database. You must include all
-     * [PreparedStatement.addBatch] calls inside the preparer.
+     * {@link PreparedStatement#addBatch} calls inside the preparer.
      *
      * @param sqlStatement The SQL statement to execute
      * @return The results of the query
-     * @throws UncheckedSQLException If a [SQLException] occurs
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
-    public int executeBatch(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
-        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
+    public int executeBatch(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+        Connection connection = null;
+        try {
+            connection = this.getConnection();
             connection.setAutoCommit(false);
-            if (psPreparer != null)
+
+            try (PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
                 psPreparer.accept(statement);
-            int count = statement.executeBatch().length;
-            connection.commit();
-            return count;
+                int[] affectedRecords = statement.executeBatch();
+                connection.commit();
+                return Arrays.stream(affectedRecords).sum();
+            }
         } catch (SQLException exception) {
+            try {
+                if (connection != null) connection.rollback();
+            } catch (SQLException rollbackEx) {
+                exception.addSuppressed(rollbackEx);
+            }
             throw new UncheckedSQLException(exception);
+        } finally {
+            try {
+                if (connection != null) connection.close();
+            } catch (SQLException ignored) { /* ignore this since there isn't much we can do */ }
         }
     }
 
     /**
      * Submits a batch of commands to the database. You must include all
-     * [PreparedStatement.addBatch] calls inside the preparer.
+     * {@link PreparedStatement#addBatch} calls inside the preparer.
      *
      * @param sqlStatement The SQL statement to execute
      * @return The results of the query
-     * @throws UncheckedSQLException If a [SQLException] occurs
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
-    public CompletableFuture<Integer> executeBatchAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+    public CompletableFuture<Integer> executeBatchAsync(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
         return CompletableFuture.supplyAsync(() -> this.executeBatch(sqlStatement, psPreparer), this.threadPool);
     }
 
