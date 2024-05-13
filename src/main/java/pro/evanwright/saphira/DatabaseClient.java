@@ -25,6 +25,81 @@ public abstract class DatabaseClient {
     }
 
     /**
+     * Queries the database for results and returns a {@link QueryResults} instance.
+     *
+     * @param sqlStatement The SQL statement to execute
+     * @return The results of the query
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
+     *
+     * @see QueryResults
+     */
+    public QueryResults query(@NotNull String sqlStatement) throws UncheckedSQLException {
+        return query(sqlStatement, new Object[0]);
+    }
+
+    /**
+     * Queries the database for results and returns a {@link QueryResults} instance.
+     *
+     * @param sqlStatement The SQL statement to execute
+     * @param params The parameters for the statement
+     * @return The results of the query
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
+     *
+     * @see QueryResults
+     */
+    public QueryResults query(@NotNull String sqlStatement, @NotNull Object... params) throws UncheckedSQLException {
+        return query(sqlStatement, preparedStatement -> {
+            for (int i = 0; i < params.length; i++) {
+                preparedStatement.setObject(i + 1, params[i]);
+            }
+        });
+    }
+
+    /**
+     * Queries the database for results and returns a {@link QueryResults} instance.
+     *
+     * @param sqlStatement The SQL statement to execute
+     * @param psPreparer   The preparer that prepares the SQL statement
+     * @return The results of the query
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
+     *
+     * @see QueryResults
+     */
+    public QueryResults query(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
+            if (psPreparer != null)
+                psPreparer.accept(statement);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                CachedRowSet cachedRowSet = RowSetProvider.newFactory().createCachedRowSet();
+                cachedRowSet.populate(resultSet);
+                return new QueryResults(cachedRowSet);
+            }
+        } catch (SQLException exception) {
+            throw new UncheckedSQLException(exception);
+        }
+    }
+
+    /**
+     * Does the same thing as {@link DatabaseClient#query(String)} except
+     * does everything asynchronously and returns a {@link CompletableFuture}.
+     *
+     * @see DatabaseClient#query(String)
+     */
+    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement) {
+        return queryAsync(sqlStatement, null);
+    }
+
+    /**
+     * Does the same thing as {@link DatabaseClient#query(String, SQLConsumer)} except
+     * does everything asynchronously and returns a {@link CompletableFuture}.
+     *
+     * @see DatabaseClient#query(String, SQLConsumer)
+     */
+    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) {
+        return CompletableFuture.supplyAsync(() -> this.query(sqlStatement, psPreparer), this.threadPool);
+    }
+
+    /**
      * Executes a SQL DML statement and returns the number of rows that were altered.
      *
      * @param sqlStatement The SQL statement to execute
@@ -32,7 +107,23 @@ public abstract class DatabaseClient {
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
     public int update(@NotNull String sqlStatement) throws UncheckedSQLException {
-        return update(sqlStatement, null);
+        return update(sqlStatement, new Object[0]);
+    }
+
+    /**
+     * Executes a SQL DML statement and returns the number of rows that were altered.
+     *
+     * @param sqlStatement The SQL statement to execute
+     * @param params The parameters for the statement
+     * @return The number of rows altered
+     * @throws UncheckedSQLException If a {@link SQLException} occurs
+     */
+    public int update(@NotNull String sqlStatement, Object... params) throws UncheckedSQLException {
+        return update(sqlStatement, preparedStatement -> {
+            for (int i = 0; i < params.length; i++) {
+                preparedStatement.setObject(i + 1, params[i]);
+            }
+        });
     }
 
     /**
@@ -51,6 +142,26 @@ public abstract class DatabaseClient {
         } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
         }
+    }
+
+    /**
+     * Does the same thing as {@link DatabaseClient#update(String, SQLConsumer)} except
+     * does everything asynchronously and returns a {@link CompletableFuture}.
+     *
+     * @see DatabaseClient#update(String)
+     */
+    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement) throws UncheckedSQLException {
+        return updateAsync(sqlStatement, null);
+    }
+
+    /**
+     * Does the same thing as {@link DatabaseClient#update(String, SQLConsumer)} except
+     * does everything asynchronously and returns a {@link CompletableFuture}.
+     *
+     * @see DatabaseClient#update(String, SQLConsumer)
+     */
+    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+        return CompletableFuture.supplyAsync(() -> this.update(sqlStatement, psPreparer), this.threadPool);
     }
 
     /**
@@ -97,81 +208,6 @@ public abstract class DatabaseClient {
      */
     public CompletableFuture<Integer> executeBatchAsync(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
         return CompletableFuture.supplyAsync(() -> this.executeBatch(sqlStatement, psPreparer), this.threadPool);
-    }
-
-    /**
-     * Does the same thing as {@link DatabaseClient#update(String, SQLConsumer)} except
-     * does everything asynchronously and returns a {@link CompletableFuture}.
-     *
-     * @see DatabaseClient#update(String)
-     */
-    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement) throws UncheckedSQLException {
-        return updateAsync(sqlStatement, null);
-    }
-
-    /**
-     * Does the same thing as {@link DatabaseClient#update(String, SQLConsumer)} except
-     * does everything asynchronously and returns a {@link CompletableFuture}.
-     *
-     * @see DatabaseClient#update(String, SQLConsumer)
-     */
-    public CompletableFuture<Integer> updateAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
-        return CompletableFuture.supplyAsync(() -> this.update(sqlStatement, psPreparer), this.threadPool);
-    }
-
-    /**
-     * Queries the database for results and returns a {@link QueryResults} instance.
-     *
-     * @param sqlStatement The SQL statement to execute
-     * @return The results of the query
-     * @throws UncheckedSQLException If a {@link SQLException} occurs
-     * @see QueryResults
-     */
-    public QueryResults query(@NotNull String sqlStatement) throws UncheckedSQLException {
-        return query(sqlStatement, null);
-    }
-
-    /**
-     * Queries the database for results and returns a {@link QueryResults} instance.
-     *
-     * @param sqlStatement The SQL statement to execute
-     * @param psPreparer   The preparer that prepares the SQL statement
-     * @return The results of the query
-     * @throws UncheckedSQLException If a {@link SQLException} occurs
-     * @see QueryResults
-     */
-    public QueryResults query(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
-        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
-            if (psPreparer != null)
-                psPreparer.accept(statement);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                CachedRowSet cachedRowSet = RowSetProvider.newFactory().createCachedRowSet();
-                cachedRowSet.populate(resultSet);
-                return new QueryResults(cachedRowSet);
-            }
-        } catch (SQLException exception) {
-            throw new UncheckedSQLException(exception);
-        }
-    }
-
-    /**
-     * Does the same thing as {@link DatabaseClient#query(String)} except
-     * does everything asynchronously and returns a {@link CompletableFuture}.
-     *
-     * @see DatabaseClient#query(String)
-     */
-    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement) {
-        return queryAsync(sqlStatement, null);
-    }
-
-    /**
-     * Does the same thing as {@link DatabaseClient#query(String, SQLConsumer)} except
-     * does everything asynchronously and returns a {@link CompletableFuture}.
-     *
-     * @see DatabaseClient#query(String, SQLConsumer)
-     */
-    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) {
-        return CompletableFuture.supplyAsync(() -> this.query(sqlStatement, psPreparer), this.threadPool);
     }
 
     public abstract void shutdown();
