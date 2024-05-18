@@ -3,8 +3,8 @@ package pro.evanwright.saphira.client;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import pro.evanwright.saphira.DatabaseClient;
-import pro.evanwright.saphira.DatabaseCredentials;
 import org.jetbrains.annotations.NotNull;
+import pro.evanwright.saphira.DatabaseSettings;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -20,27 +20,27 @@ public class MySQLClient extends DatabaseClient {
 
     /**
      * Creates a new MySQLClient instance.
-     * @param databaseCredentials  The credentials to authenticate to the database
+     * @param databaseSettings  The settings required to set up the database instance
      */
-    public MySQLClient(@NotNull DatabaseCredentials databaseCredentials) {
+    public MySQLClient(@NotNull DatabaseSettings databaseSettings) {
         HikariConfig hikariConfig = new HikariConfig();
         boolean foundMaria = false;
         try {
             Class.forName("org.mariadb.jdbc.Driver");
-            hikariConfig.setJdbcUrl(String.format("jdbc:mariadb://%s:%s/%s", databaseCredentials.host, databaseCredentials.port, databaseCredentials.database));
+            hikariConfig.setJdbcUrl(String.format("jdbc:mariadb://%s:%s/%s", databaseSettings.host, databaseSettings.port, databaseSettings.database));
             foundMaria = true;
         } catch (ClassNotFoundException e) {
-            hikariConfig.setJdbcUrl(String.format("jdbc:mysql://%s:%s/%s", databaseCredentials.host, databaseCredentials.port, databaseCredentials.database));
+            hikariConfig.setJdbcUrl(String.format("jdbc:mysql://%s:%s/%s", databaseSettings.host, databaseSettings.port, databaseSettings.database));
         }
-        hikariConfig.setUsername(databaseCredentials.username);
-        hikariConfig.setPassword(databaseCredentials.password);
+        hikariConfig.setUsername(databaseSettings.username);
+        hikariConfig.setPassword(databaseSettings.password);
 
-        hikariConfig.setPoolName(databaseCredentials.poolName);
+        hikariConfig.setPoolName(databaseSettings.poolName);
 
         hikariConfig.addDataSourceProperty("useUnicode", "true");
         hikariConfig.addDataSourceProperty("characterEncoding", "utf8");
 
-        if (databaseCredentials.optimizeHikari) {
+        if (databaseSettings.optimizeHikari) {
             hikariConfig.setMaxLifetime(30000);
             hikariConfig.setIdleTimeout(10000);
             hikariConfig.setMaximumPoolSize(20);
