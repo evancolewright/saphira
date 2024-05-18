@@ -1,7 +1,7 @@
 package pro.evanwright.saphira;
 
 import pro.evanwright.saphira.exception.UncheckedSQLException;
-import pro.evanwright.saphira.query.QueryResults;
+import pro.evanwright.saphira.query.QueryResult;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,35 +19,37 @@ import java.util.concurrent.Executors;
 public abstract class DatabaseClient {
 
     private final ExecutorService threadPool;
+    private final ThreadLocal<Connection> transactionConnection;
 
     protected DatabaseClient() {
         this.threadPool = Executors.newCachedThreadPool();
+        this.transactionConnection = new ThreadLocal<>();
     }
 
     /**
-     * Queries the database for results and returns a {@link QueryResults} instance.
+     * Queries the database for results and returns a {@link QueryResult} instance.
      *
      * @param sqlStatement The SQL statement to execute
      * @return The results of the query
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      *
-     * @see QueryResults
+     * @see QueryResult
      */
-    public QueryResults query(@NotNull String sqlStatement) throws UncheckedSQLException {
+    public QueryResult query(@NotNull String sqlStatement) throws UncheckedSQLException {
         return query(sqlStatement, new Object[0]);
     }
 
     /**
-     * Queries the database for results and returns a {@link QueryResults} instance.
+     * Queries the database for results and returns a {@link QueryResult} instance.
      *
      * @param sqlStatement The SQL statement to execute
      * @param params The parameters for the statement
      * @return The results of the query
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      *
-     * @see QueryResults
+     * @see QueryResult
      */
-    public QueryResults query(@NotNull String sqlStatement, @NotNull Object... params) throws UncheckedSQLException {
+    public QueryResult query(@NotNull String sqlStatement, @NotNull Object... params) throws UncheckedSQLException {
         return query(sqlStatement, preparedStatement -> {
             for (int i = 0; i < params.length; i++) {
                 preparedStatement.setObject(i + 1, params[i]);
@@ -56,23 +58,23 @@ public abstract class DatabaseClient {
     }
 
     /**
-     * Queries the database for results and returns a {@link QueryResults} instance.
+     * Queries the database for results and returns a {@link QueryResult} instance.
      *
      * @param sqlStatement The SQL statement to execute
      * @param psPreparer   The preparer that prepares the SQL statement
      * @return The results of the query
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      *
-     * @see QueryResults
+     * @see QueryResult
      */
-    public QueryResults query(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
-        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
+    public QueryResult query(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+        try (Connection connection = this.getConnectionInternal(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
             if (psPreparer != null)
                 psPreparer.accept(statement);
             try (ResultSet resultSet = statement.executeQuery()) {
                 CachedRowSet cachedRowSet = RowSetProvider.newFactory().createCachedRowSet();
                 cachedRowSet.populate(resultSet);
-                return new QueryResults(cachedRowSet);
+                return new QueryResult(cachedRowSet);
             }
         } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
@@ -85,7 +87,7 @@ public abstract class DatabaseClient {
      *
      * @see DatabaseClient#query(String)
      */
-    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement) {
+    public CompletableFuture<QueryResult> queryAsync(@NotNull String sqlStatement) {
         return queryAsync(sqlStatement, null);
     }
 
@@ -95,7 +97,7 @@ public abstract class DatabaseClient {
      *
      * @see DatabaseClient#query(String, SQLConsumer)
      */
-    public CompletableFuture<QueryResults> queryAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) {
+    public CompletableFuture<QueryResult> queryAsync(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) {
         return CompletableFuture.supplyAsync(() -> this.query(sqlStatement, psPreparer), this.threadPool);
     }
 
@@ -135,7 +137,7 @@ public abstract class DatabaseClient {
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
     public int update(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
-        try (Connection connection = this.getConnection(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
+        try (Connection connection = this.getConnectionInternal(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
             if (psPreparer != null)
                 psPreparer.accept(statement);
             return statement.executeUpdate();
@@ -175,7 +177,7 @@ public abstract class DatabaseClient {
     public int executeBatch(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
         Connection connection = null;
         try {
-            connection = this.getConnection();
+            connection = this.getConnectionInternal();
             connection.setAutoCommit(false);
 
             try (PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
@@ -206,11 +208,60 @@ public abstract class DatabaseClient {
      * @return The results of the query
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
-    public CompletableFuture<Integer> executeBatchAsync(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
+    public CompletableFuture<Integer> executeBatchAsync(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer)  {
         return CompletableFuture.supplyAsync(() -> this.executeBatch(sqlStatement, psPreparer), this.threadPool);
     }
 
+    /**
+     * Starts a transaction and executes the specified operation.
+     * This method manages the entire transaction lifecycle by committing the transaction if the operation
+     * succeeds or rolling back if an exception occurs.
+     *
+     * @param <T> The type of the result returned by the operation
+     * @param operation The transactional operation to be executed
+     * @throws UncheckedSQLException If a {@link SQLException} occurs during the transaction
+     */
+    public <T> T executeTransaction(TransactionOperation<T> operation) throws UncheckedSQLException {
+        try (Connection connection = this.getConnectionInternal()) {
+            try {
+                connection.setAutoCommit(false);
+                transactionConnection.set(connection);
+
+                T result = operation.execute();
+                connection.commit();
+                return result;
+            } catch (SQLException exception) {
+                connection.rollback();
+                System.err.println("Transaction rolled back due to: " + exception.getMessage());
+                throw new UncheckedSQLException(exception);
+            }
+        } catch (SQLException exception) {
+            throw new UncheckedSQLException(exception);
+        } finally {
+            transactionConnection.remove();
+        }
+    }
+
+    /**
+     * Does the same thing as {@link DatabaseClient#executeTransaction(TransactionOperation)} except
+     * does everything asynchronously and returns a {@link CompletableFuture}.
+     *
+     * @see DatabaseClient#executeTransactionAsync(TransactionOperation)
+     */
+    public <T> CompletableFuture<T> executeTransactionAsync(TransactionOperation<T> operation) throws UncheckedSQLException {
+        return CompletableFuture.supplyAsync(() -> executeTransaction(operation), this.threadPool);
+    }
+
     public abstract void shutdown();
+
+    private Connection getConnectionInternal() throws SQLException {
+        Connection connection = transactionConnection.get();  // If we are in a transaction, use the cached connection
+        if (connection == null) {
+            return this.getConnection();
+        }
+
+        return connection;
+    }
 
     public abstract Connection getConnection() throws SQLException;
 }

@@ -10,10 +10,10 @@ import java.sql.SQLException;
 /**
  * A wrapper around {@link ResultSet} that transforms checked {@link SQLException} into {@link UncheckedSQLException}.
  */
-public class QueryResults {
+public class QueryResult {
     private final ResultSet resultSet;
 
-    public QueryResults(ResultSet resultSet) {
+    public QueryResult(ResultSet resultSet) {
         this.resultSet = resultSet;
     }
 
