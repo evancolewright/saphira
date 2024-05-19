@@ -8,6 +8,10 @@ public class UncheckedSQLException extends RuntimeException {
         super(throwable);
     }
 
+    public UncheckedSQLException(String errorMessage) {
+        super(errorMessage);
+    }
+
     public UncheckedSQLException(String errorMessage, Throwable throwable) {
         super(errorMessage, throwable);
     }

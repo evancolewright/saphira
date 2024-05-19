@@ -2,19 +2,66 @@ package pro.evanwright.saphira.query;
 
 import pro.evanwright.saphira.exception.UncheckedSQLException;
 
+import javax.sql.rowset.CachedRowSet;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 /**
  * A wrapper around {@link ResultSet} that transforms checked {@link SQLException} into {@link UncheckedSQLException}.
  */
 public class QueryResult {
-    private final ResultSet resultSet;
+    private final CachedRowSet resultSet;
 
-    public QueryResult(ResultSet resultSet) {
+    public QueryResult(CachedRowSet resultSet) {
         this.resultSet = resultSet;
+    }
+
+    /**
+     * Convenience function that retrieves the value of the first column in the first row
+     * of the result set as an Optional.
+     *
+     * @param <T> The type of the value to be returned.
+     * @return An Optional containing the value of the first column in the first row, or an empty Optional if the result set is empty.
+     * @throws UncheckedSQLException If a {@link SQLException} occurs.
+     */
+    public <T> Optional<T> getFirstColValue() throws UncheckedSQLException {
+        try {
+            if (resultSet.next()) {
+                @SuppressWarnings("unchecked")
+                T value = (T) resultSet.getObject(1);
+                return Optional.ofNullable(value);
+            } else {
+                return Optional.empty();
+            }
+        } catch (SQLException exception) {
+            throw new UncheckedSQLException(exception);
+        }
+    }
+
+    /**
+     * Convenience function that retrieves the value of the specified column in the first row of
+     * the result set as an Optional.
+     *
+     * @param columnLabel The label of the column to retrieve.
+     * @param <T>         The type of the value to be returned.
+     * @return An Optional containing the value of the specified column in the first row, or an empty Optional if the result set is empty.
+     * @throws UncheckedSQLException If a {@link SQLException} occurs.
+     */
+    public <T> Optional<T> getFirstRowColValue(String columnLabel) throws UncheckedSQLException {
+        try {
+            if (resultSet.next()) {
+                @SuppressWarnings("unchecked")
+                T value = (T) resultSet.getObject(columnLabel);
+                return Optional.ofNullable(value);
+            } else {
+                return Optional.empty();
+            }
+        } catch (SQLException exception) {
+            throw new UncheckedSQLException(exception);
+        }
     }
 
     /**

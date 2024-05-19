@@ -9,7 +9,7 @@ import pro.evanwright.saphira.exception.UncheckedSQLException;
 import pro.evanwright.saphira.mock.MockMySQLDatabaseClient;
 import pro.evanwright.saphira.query.QueryResult;
 
-import java.sql.SQLException;
+import java.util.Optional;
 
 public class MySQLDatabaseClientTests {
     private MockMySQLDatabaseClient mockMySQLDatabaseClient;
@@ -111,15 +111,15 @@ public class MySQLDatabaseClientTests {
 
     @Test
     public void executeTransactionFailureTest() {
-        try {
+        Assertions.assertThrows(UncheckedSQLException.class, () -> {
             mockMySQLDatabaseClient.executeTransaction(() -> {
                 mockMySQLDatabaseClient.update("INSERT INTO Users (name, dob) VALUES (?, ?)", "Alice", "1994-05-12");
-                throw new SQLException("Simulated error");
+                mockMySQLDatabaseClient.update("INSERT INTO Users (name, dob) VALUES (?, ?)", "Bob", "1994-05-12");
+                throw new UncheckedSQLException("I just really want to fail today");
             });
-        } catch (UncheckedSQLException ignored) {
-        }
+        });
 
-        QueryResult result = mockMySQLDatabaseClient.query("SELECT * FROM Users WHERE name = 'Alice'");
-        Assertions.assertFalse(result.next(), "Unexpected result found for Alice");
+        Optional<Long> rowCount = mockMySQLDatabaseClient.query("SELECT COUNT(id) FROM Users").getFirstColValue();
+        rowCount.ifPresent(count -> Assertions.assertEquals(1, count));
     }
 }

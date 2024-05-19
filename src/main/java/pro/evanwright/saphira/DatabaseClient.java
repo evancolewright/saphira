@@ -68,16 +68,29 @@ public abstract class DatabaseClient {
      * @see QueryResult
      */
     public QueryResult query(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
-        try (Connection connection = this.getConnectionInternal(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
-            if (psPreparer != null)
-                psPreparer.accept(statement);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                CachedRowSet cachedRowSet = RowSetProvider.newFactory().createCachedRowSet();
-                cachedRowSet.populate(resultSet);
-                return new QueryResult(cachedRowSet);
+        Connection connection = null;
+        try {
+            connection = this.getConnectionInternal();
+
+            try (PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
+                if (psPreparer != null) {
+                    psPreparer.accept(statement);
+                }
+
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    CachedRowSet cachedRowSet = RowSetProvider.newFactory().createCachedRowSet();
+                    cachedRowSet.populate(resultSet);
+                    return new QueryResult(cachedRowSet);
+                }
             }
         } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
+        } finally {
+            if (connection != null && this.transactionConnection.get() == null) { // If we aren't in a transaction, close the connection
+                try {
+                    connection.close();
+                } catch (SQLException ignored) {}
+            }
         }
     }
 
@@ -137,12 +150,24 @@ public abstract class DatabaseClient {
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
     public int update(@NotNull String sqlStatement, @Nullable SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
-        try (Connection connection = this.getConnectionInternal(); PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
-            if (psPreparer != null)
-                psPreparer.accept(statement);
-            return statement.executeUpdate();
+        Connection connection = null;
+        try {
+            connection = this.getConnectionInternal();
+
+            try (PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
+                if (psPreparer != null) {
+                    psPreparer.accept(statement);
+                }
+                return statement.executeUpdate();
+            }
         } catch (SQLException exception) {
             throw new UncheckedSQLException(exception);
+        } finally {
+            if (connection != null && this.transactionConnection.get() == null) { // If we aren't in a transaction, close the connection
+                try {
+                    connection.close();
+                } catch (SQLException ignored) {}
+            }
         }
     }
 
@@ -175,29 +200,13 @@ public abstract class DatabaseClient {
      * @throws UncheckedSQLException If a {@link SQLException} occurs
      */
     public int executeBatch(@NotNull String sqlStatement, @NotNull SQLConsumer<PreparedStatement> psPreparer) throws UncheckedSQLException {
-        Connection connection = null;
-        try {
-            connection = this.getConnectionInternal();
-            connection.setAutoCommit(false);
-
-            try (PreparedStatement statement = connection.prepareStatement(sqlStatement)) {
+        return executeTransaction(() -> {
+            try (PreparedStatement statement = this.getConnectionInternal().prepareStatement(sqlStatement)) {
                 psPreparer.accept(statement);
                 int[] affectedRecords = statement.executeBatch();
-                connection.commit();
                 return Arrays.stream(affectedRecords).sum();
             }
-        } catch (SQLException exception) {
-            try {
-                if (connection != null) connection.rollback();
-            } catch (SQLException rollbackEx) {
-                exception.addSuppressed(rollbackEx);
-            }
-            throw new UncheckedSQLException(exception);
-        } finally {
-            try {
-                if (connection != null) connection.close();
-            } catch (SQLException ignored) { /* ignore this since there isn't much we can do */ }
-        }
+        });
     }
 
     /**
@@ -215,30 +224,52 @@ public abstract class DatabaseClient {
     /**
      * Starts a transaction and executes the specified operation.
      * This method manages the entire transaction lifecycle by committing the transaction if the operation
-     * succeeds or rolling back if an exception occurs.
+     * succeeds or rolling back if an exception occurs.  Please note that inner transactions are not supported
+     * and will result in an {@link IllegalStateException}.
      *
      * @param <T> The type of the result returned by the operation
      * @param operation The transactional operation to be executed
      * @throws UncheckedSQLException If a {@link SQLException} occurs during the transaction
      */
     public <T> T executeTransaction(TransactionOperation<T> operation) throws UncheckedSQLException {
-        try (Connection connection = this.getConnectionInternal()) {
-            try {
-                connection.setAutoCommit(false);
-                transactionConnection.set(connection);
+        if (transactionConnection.get() != null) {
+            throw new IllegalStateException("Starting a transaction inside of another transaction is unsupported.");
+        }
 
-                T result = operation.execute();
-                connection.commit();
-                return result;
-            } catch (SQLException exception) {
-                connection.rollback();
-                System.err.println("Transaction rolled back due to: " + exception.getMessage());
-                throw new UncheckedSQLException(exception);
-            }
+        Connection connection = null;
+        try {
+            connection = this.getConnection();
+            connection.setAutoCommit(false);
+            this.transactionConnection.set(connection);
+
+            T result = operation.execute(); // May throw an UncheckedSQLException
+            connection.commit();
+            return result;
         } catch (SQLException exception) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    exception.addSuppressed(rollbackEx);
+                }
+            }
             throw new UncheckedSQLException(exception);
+        } catch (UncheckedSQLException exception) {
+            if (connection != null) {
+                try {
+                    connection.rollback();
+                } catch (SQLException rollbackEx) {
+                    exception.addSuppressed(rollbackEx);
+                }
+            }
+            throw exception; // rethrow the unchecked exception directly
         } finally {
             transactionConnection.remove();
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException ignored) {}
+            }
         }
     }
 
