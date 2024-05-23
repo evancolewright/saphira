@@ -15,7 +15,12 @@ import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 
+/**
+ * Abstract database client implementation.
+ * See {@link pro.evanwright.saphira.client.MySQLClient} for a concrete implementation.
+ */
 public abstract class DatabaseClient {
 
     private final ExecutorService threadPool;
@@ -205,6 +210,8 @@ public abstract class DatabaseClient {
                 psPreparer.accept(statement);
                 int[] affectedRecords = statement.executeBatch();
                 return Arrays.stream(affectedRecords).sum();
+            } catch (SQLException exception) {
+                throw new UncheckedSQLException(exception);
             }
         });
     }
@@ -228,10 +235,10 @@ public abstract class DatabaseClient {
      * and will result in an {@link IllegalStateException}.
      *
      * @param <T> The type of the result returned by the operation
-     * @param operation The transactional operation to be executed
+     * @param supplier The supplier of the result of the transaction
      * @throws UncheckedSQLException If a {@link SQLException} occurs during the transaction
      */
-    public <T> T executeTransaction(TransactionOperation<T> operation) throws UncheckedSQLException {
+    public <T> T executeTransaction(Supplier<T> supplier) throws UncheckedSQLException {
         if (transactionConnection.get() != null) {
             throw new IllegalStateException("Starting a transaction inside of another transaction is unsupported.");
         }
@@ -242,7 +249,7 @@ public abstract class DatabaseClient {
             connection.setAutoCommit(false);
             this.transactionConnection.set(connection);
 
-            T result = operation.execute(); // May throw an UncheckedSQLException
+            T result = supplier.get(); // May throw an UncheckedSQLException
             connection.commit();
             return result;
         } catch (SQLException exception) {
@@ -274,13 +281,13 @@ public abstract class DatabaseClient {
     }
 
     /**
-     * Does the same thing as {@link DatabaseClient#executeTransaction(TransactionOperation)} except
+     * Does the same thing as {@link DatabaseClient#executeTransaction(Supplier)} except
      * does everything asynchronously and returns a {@link CompletableFuture}.
      *
-     * @see DatabaseClient#executeTransactionAsync(TransactionOperation)
+     * @see DatabaseClient#executeTransactionAsync(Supplier)
      */
-    public <T> CompletableFuture<T> executeTransactionAsync(TransactionOperation<T> operation) throws UncheckedSQLException {
-        return CompletableFuture.supplyAsync(() -> executeTransaction(operation), this.threadPool);
+    public <T> CompletableFuture<T> executeTransactionAsync(Supplier<T> supplier) throws UncheckedSQLException {
+        return CompletableFuture.supplyAsync(() -> executeTransaction(supplier), this.threadPool);
     }
 
     public abstract void shutdown();
